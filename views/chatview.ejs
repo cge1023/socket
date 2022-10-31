@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js" integrity="sha384-7EyYLQZgWBi67fBtVxw60/OWl1kjsfrPFcaU0pp0nAh+i8FD068QogUvg85Ewy1k" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+    <style>
+        .chat-list {
+            background-color: skyblue;
+            width: 300px;
+            min-height: 500px;
+        }
+        .my-chat {
+            text-align: right;
+        }
+        .my-chat div {
+            display: inline-block;
+            background-color: yellow;
+        }
+        .other-chat {
+            text-align: left;
+        }
+        .other-chat div {
+            display: inline-block;
+            background-color: white;
+        }
+        .notice {
+            color: blue;
+            text-align: center;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <input type="text" id="nickname">
+        <button type="button" onclick="entry()">입장</button>
+    </div>
+    <div class="chat-list"></div>
+    <div>
+        <input type="text" name="msg" id="msg">
+        <button type="button" onclick="sendMsg()">전송</button>
+    </div>
+
+    <script>
+        var socket = io.connect();
+
+        function sendMsg() {
+            // 1. input value 가져오기
+            var msg = $("#msg").val();
+            socket.emit("sendMsg", msg)
+        }
+
+        socket.on("send", (msg) => {
+            var myMsg = $("#msg").val();
+            var className = ""
+
+            if(myMsg == msg) className = "my-chat" 
+            else className = "other-chat"
+
+            $(".chat-list").append(`
+            <div class=${className}>
+                <div>${msg}</div>
+            </div>`)
+            
+        })
+
+        function entry() {
+            var nickname = $("#nickname").val();
+            socket.emit("notice", nickname);
+            socket.on("notice", (msg) => {
+            $(".chat-list").append(`<div class="notice">${msg}</div>`)
+        })
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js" integrity="sha384-7EyYLQZgWBi67fBtVxw60/OWl1kjsfrPFcaU0pp0nAh+i8FD068QogUvg85Ewy1k" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.6.1.min.js" integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
+    <style>
+        @font-face {
+            font-family: 'HallymGothic-Regular';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2204@1.0/HallymGothic-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+        }
+        * {
+            font-family: 'HallymGothic-Regular';
+        }
+        .container {
+            background-color: #CDE4E9;
+            width: 530px;
+            height: 89vh;
+            margin: auto;
+            box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+        }
+        .notice {
+            text-align: center;
+            color: #7F8D9A;
+            padding-top: 10px;
+            font-size: 12px;
+        }
+        .myMsg {
+            padding-top: 15px;
+            padding-bottom: 15px;
+            text-align: right;
+            margin-right: 5px;
+        }
+        .myMsg span:first-child {
+            font-size: 10px;
+            color: #7F8D9A;
+            padding-right: 5px;
+            
+        }
+        .myMsg span:nth-child(2){
+            background-color: #F3EEDD;
+            padding: 8px;
+            border-radius: 3px;
+        }
+        .urMsg{
+            padding-top: 15px;
+            padding-bottom: 15px;
+            margin-left: 5px;
+        }
+        .urMsg span:first-child {
+            background-color: #FFFFFF;
+            padding: 8px;
+            border-radius: 3px;
+        }
+        .urMsg span:nth-child(2) {
+            font-size: 10px;
+            color: #7F8D9A;
+            padding-left: 5px;
+        }
+        .msgBox, .nameBox {
+            text-align: center;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+        .msgInput {
+            width: 400px;
+            height: 25px;
+        }
+        .nameInput {
+            width: 480px;
+            height: 25px;
+        }
+        .msgBtn, .nameBtn {
+            height: 31px;
+            background-color: #F3EEDD;
+            border: none;
+        }
+        .msgBtn:hover, .nameBtn:hover {
+            box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+        }
+        .nameList {
+            height: 30px;
+            width: 80px;
+        }
+        .d-none {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="nameBox">
+        <input class="nameInput" placeholder="이름을 입력하세요.">
+        <button class="nameBtn" onclick="noticeWithName()">입력</button>
+    </div>
+    <div class="d-none" id="chat">
+    <div class="container"></div>
+        <div class="msgBox">
+            <select class="nameList" name="nameList"></select>
+            <input class="msgInput">
+            <button class="msgBtn">전송</button>
+        </div>
+    </div>
+    <script>
+        var socket = io.connect();
+        var myMsg;
+        
+        // 버튼 클릭 이벤트 (메시지 보내기)
+        $(".msgBtn").click(function() {
+            socket.emit("message", { 
+                msg: $(".msgInput").val(), 
+                name: $(".nameInput").val(),
+                dm: $(".nameList").val(), 
+            });
+            myMsg = $(".msgInput").val();
+            $(".msgInput").val("");
+        })
+        // 메시지 인풋 엔터키 이벤트
+        $(".msgInput").keydown(function(key) {
+            if (key.keyCode == 13) {
+                $(".msgBtn").click()
+            }
+        })
+        // 입장 멘트
+        function noticeWithName() {
+            var name = $(".nameInput").val();
+            socket.emit("notice", name);
+        }
+        // 이름 중복 처리
+        socket.on("err", (msg) => {
+            alert(msg);
+        })
+        // 이름 중복 없이 입장 성공 됐을 때
+        socket.on("entrySuccess", () => {
+            $("#chat").removeClass("d-none");
+            $(".nameInput, .nameBtn").attr("disabled", true);
+            socketEvent();
+        })
+
+        function socketEvent() {
+            socket.on("notice", (msg, users) => {
+            $(".container").append(`<div class="notice">${msg}</div>`);
+        })
+            // 메시지 받아오기
+            socket.on("send", (data) => {
+                let today = new Date();
+                let time = today.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+
+                if(myMsg != data.msg) {
+                    $(".container").append(`<div class="urMsg"><span>${data.name} : ${data.msg}</span><span>${time}</span></div>`)
+                } else {
+                    $(".container").append(`</div><div class="myMsg"><span>${time}</span><span>${data.name} : ${data.msg}</span></div>`)
+                }
+                myMsg='';
+            })
+
+            socket.on("clientUpdate", (client) => {
+                var html = "<option value='all'>모두에게</option>";
+                for (var i in client) {
+                    if(client[i] != $(".nameInput").val()){
+                        html += `<option value=${i}>${client[i]}</option>`;
+                    }
+                }
+            $(".nameList").html(html)
+            })
+        }
+    </script>
+</body>
+</html>
