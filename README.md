@@ -29,5 +29,3 @@
 - 단체 메시지 그리고 DM 기능도 구현하였습니다.
 <br>
 
-## 🔗 링크
-- **웹 URL** - <a href="http://my-netflix.s3-website.ap-northeast-2.amazonaws.com/">my-netflix 로 이동</a>
